@@ -6,12 +6,40 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
 #define PORT    5555
 #define MAXMSG  512
 
-int
-read_from_client (int filedes)
+int rightInARow;
+
+int make_socket (uint16_t port)
+{
+  int sock;
+  struct sockaddr_in name;
+
+  /* Create the socket. */
+  sock = socket (PF_INET, SOCK_STREAM, 0);
+  if (sock < 0)
+    {
+      perror ("socket");
+      exit (EXIT_FAILURE);
+    }
+
+  /* Give the socket a name. */
+  name.sin_family = AF_INET;
+  name.sin_port = htons (port);
+  name.sin_addr.s_addr = htonl (INADDR_ANY);
+  if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0)
+  {
+    perror ("bind");
+    exit (EXIT_FAILURE);
+  }
+
+  return sock;
+}
+
+int read_from_client (int filedes)
 {
   char buffer[MAXMSG];
   int nbytes;
@@ -34,27 +62,33 @@ read_from_client (int filedes)
     }
 }
 
-int
-main (void)
+
+
+int main (void)
 {
-  extern int make_socket (uint16_t port);
-  int sock;
+  rightInARow = 0;
+  int sock, firstKnockSock, secondKnockSock;
   fd_set active_fd_set, read_fd_set;
   int i;
   struct sockaddr_in clientname;
   size_t size;
 
   /* Create the socket and set it up to accept connections. */
-  sock = make_socket (PORT);
-  if (listen (sock, 1) < 0)
-    {
-      perror ("listen");
-      exit (EXIT_FAILURE);
-    }
+  firstKnockSock = make_socket (5553);
+  secondKnockSock = make_socket (5554);
+  sock = make_socket (5555);
+
+  if (listen (firstKnockSock, 1) < 0 || listen (secondKnockSock, 1) < 0 || listen (sock, 1) < 0)
+  {
+    perror ("listen");
+    exit (EXIT_FAILURE);
+  }
 
   /* Initialize the set of active sockets. */
   FD_ZERO (&active_fd_set);
+  //FD_SET (firstKnockSock, &active_fd_set);
   FD_SET (sock, &active_fd_set);
+  //FD_SET (secondKnockSock, &active_fd_set);
 
   while (1)
     {
@@ -73,12 +107,12 @@ main (void)
             if (i == sock)
               {
                 /* Connection request on original socket. */
-                int new;
+                int newSock;
                 size = sizeof (clientname);
-                new = accept (sock,
+                newSock = accept (sock,
                               (struct sockaddr *) &clientname,
-                              &size);
-                if (new < 0)
+                              (socklen_t*)&size);
+                if (newSock < 0)
                   {
                     perror ("accept");
                     exit (EXIT_FAILURE);
@@ -87,7 +121,7 @@ main (void)
                          "Server: connect from host %s, port %hd.\n",
                          inet_ntoa (clientname.sin_addr),
                          ntohs (clientname.sin_port));
-                FD_SET (new, &active_fd_set);
+                FD_SET (newSock, &active_fd_set);
               }
             else
               {
