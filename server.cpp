@@ -154,7 +154,7 @@ int main (void)
           {
             rightInARow++;
             fprintf (stderr,
-                    "Server: KNOCK1 from host %s, port %hd.\n",
+                    "Server: KNOCK2 from host %s, port %hd.\n",
                     inet_ntoa (clientname.sin_addr),
                     ntohs (clientname.sin_port));
           }
@@ -162,7 +162,7 @@ int main (void)
           {
             //do ban the specific IP for two minutes??
             fprintf (stderr,
-                    "Server: KNOCK1 REPEAT from host %s, port %hd. BAN NOE PLES\n",
+                    "Server: KNOCK2 REPEAT from host %s, port %hd. BAN NOE PLES\n",
                     inet_ntoa (clientname.sin_addr),
                     ntohs (clientname.sin_port));
           }
