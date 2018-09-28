@@ -69,7 +69,7 @@ int send_message(int filedes, std::string message)
 
 int read_from_client (int filedes)
 {
-  char buffer[MAXMSG];
+  char buffer[MAXMSG] = {};
   int nbytes;
 
   nbytes = read (filedes, buffer, MAXMSG);
@@ -149,6 +149,13 @@ int main (void)
 
         if (i == firstKnockSock)
         {
+
+          int newSock;
+          size = sizeof (clientname);
+          newSock = accept (firstKnockSock,
+              (struct sockaddr *) &clientname,
+              (socklen_t*)&size);
+          close(newSock);
           std::string IP_addr = inet_ntoa (clientname.sin_addr);
           auto knock = correct_knocks.find(IP_addr);
           if(knock == correct_knocks.end())
@@ -156,7 +163,7 @@ int main (void)
             /* If the IP isn't in the map we add it with the int value 1 */
             correct_knocks.insert( std::pair<std::string,int>(IP_addr,1) );
             fprintf (stderr,
-                    "Server: KNOCK1 from host %s, port %hd.\n",
+                    "Server: KNOCK1 from host %s, port %d.\n",
                     IP_addr.c_str(),
                     ntohs (clientname.sin_port));
           }
@@ -165,26 +172,27 @@ int main (void)
           {
             knock->second = 1;
             fprintf (stderr,
-                    "Server: KNOCK1 AFTER START OF RIGHT SEQUENCE %s, port %hd.\n",
+                    "Server: KNOCK1 AFTER START OF RIGHT SEQUENCE %s, port %d.\n",
                     IP_addr.c_str(),
                     ntohs (clientname.sin_port));
           }
-          int newSock;
-          size = sizeof (clientname);
-          newSock = accept (firstKnockSock,
-              (struct sockaddr *) &clientname,
-              (socklen_t*)&size);
-          close(newSock);
         }
         else if (i == secondKnockSock)
         {
+
+          int newSock;
+          size = sizeof (clientname);
+          newSock = accept (secondKnockSock,
+                            (struct sockaddr *) &clientname,
+                            (socklen_t*)&size);
+          close(newSock);
           std::string IP_addr = inet_ntoa (clientname.sin_addr);
           auto knock = correct_knocks.find(IP_addr);
           if(knock != correct_knocks.end() && knock->second == 1)
           {
             knock->second++;
             fprintf (stderr,
-                    "Server: KNOCK2 SUCCESS from host %s, port %hd.\n",
+                    "Server: KNOCK2 SUCCESS from host %s, port %d.\n",
                     IP_addr.c_str(),
                     ntohs (clientname.sin_port));
           }
@@ -193,31 +201,25 @@ int main (void)
             if(knock != correct_knocks.end())
               correct_knocks.erase(knock);
             fprintf (stderr,
-                     "Server: KNOCK2 NOT AFTER KNOCK1 from host %s, port %hd.\n",
+                     "Server: KNOCK2 NOT AFTER KNOCK1 from host %s, port %d.\n",
                      IP_addr.c_str(),
                      ntohs (clientname.sin_port));
           }
-          int newSock;
-          size = sizeof (clientname);
-          newSock = accept (secondKnockSock,
-                            (struct sockaddr *) &clientname,
-                            (socklen_t*)&size);
-          close(newSock);
         }
         else if (i == sock)
         {
-          std::string IP_addr = inet_ntoa (clientname.sin_addr);
-          auto knock = correct_knocks.find(IP_addr);
           int newSock;
           size = sizeof (clientname);
           newSock = accept (sock,
                             (struct sockaddr *) &clientname,
                             (socklen_t*)&size);
+          std::string IP_addr = inet_ntoa (clientname.sin_addr);
+          auto knock = correct_knocks.find(IP_addr);
           if(knock == correct_knocks.end() || knock->second != 2)
           {
             close(newSock);
             fprintf (stderr,
-                      "Server: THIRD KNOCK FAILED %s, port %hd.\n",
+                      "Server: THIRD KNOCK FAILED %s, port %d.\n",
                       IP_addr.c_str(),
                       ntohs (clientname.sin_port));
           }
@@ -225,7 +227,7 @@ int main (void)
           {
             /* Knocking succeeded and FD is set for the new socket */
             fprintf (stderr,
-                      "Server: connect from host %s, port %hd.\n",
+                      "Server: connect from host %s, port %d.\n",
                       IP_addr.c_str(),
                       ntohs (clientname.sin_port));
             FD_SET (newSock, &active_fd_set);
