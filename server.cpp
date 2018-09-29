@@ -76,7 +76,7 @@ std::string get_user_by_fd(int userSock)
 {
   for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
   {
-    if(it->second != userSock)
+    if(it->second == userSock)
     {
       return it->first;
     }
@@ -129,15 +129,13 @@ int read_from_client (int userSock)
         auto checkUsername = logged_users.find(username);
         if(checkUsername == logged_users.end())
         {
-          for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
+          std::string current_user = get_user_by_fd(userSock);
+          if(current_user != "")
           {
-            if(it->second == userSock)
-            {
-              fprintf(stderr, "You are already connected\n");
-              send_message(userSock, "You are already connected as: " + it->first);
-              return 0;
-            }
+            send_message(userSock, "You are already connected as: " + current_user);
+            return 0;
           }
+      
           logged_users.insert(std::pair<std::string,int>(username,userSock));
           send_message(userSock, "Joined server successfully");
           fprintf(stderr, "success\n");
@@ -152,38 +150,33 @@ int read_from_client (int userSock)
       }
       else
       {
-        for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+        {
+          std::string username = get_user_by_fd(userSock);
+          if(command == "MSG")
           {
-            std::string username;
-            if(it->second == userSock)
+            int splitter = message.find(' ');
+            std::string reciever = message.substr(0, splitter);
+            std::string message_to_rec = message.substr(splitter + 1);
+            if(reciever == "ALL")
             {
-              username = it->first;
-              if(command == "MSG_ALL")
+              for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
               {
-                for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+                if(it->second != userSock)
                 {
-                  if(it->second != userSock)
-                  {
-                    message = username + ": " + message;
-                    send_message(it->second, message);
-                  }
+                  send_message(it->second, username + " TO ALL: " +message_to_rec);
                 }
-              }
-              else if(command == "MSG")
-              {
-                int splitter = message.find(' ');
-                std::string reciever = message.substr(0, splitter);
-                std::string message_to_rec = message.substr(splitter + 1);
-                auto recSock = logged_users.find(reciever);
-                if(recSock != logged_users.end())
-                  send_message(recSock->second, message_to_rec);
-                else
-                  send_message(userSock, "User with name '" + reciever + "' not found");
               }
               return 0;
             }
+            auto recSock = logged_users.find(reciever);
+            if(recSock != logged_users.end())
+              send_message(recSock->second, get_user_by_fd(userSock) + ": " +  message_to_rec);
+            else
+              send_message(userSock, "User with name '" + reciever + "' not found");
           }
-          send_message(userSock, "You must connect first to use commands");
+          return 0;
+        }
+        send_message(userSock, "You must connect first to use commands");
       }
       
       return 0;
