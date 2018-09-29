@@ -115,10 +115,6 @@ int main(int argc, char *argv[])
 
     read.join();
     write.join();
-    while(true)
-    {
-
-    }
     
     close(sockfd3);
     return 0;
