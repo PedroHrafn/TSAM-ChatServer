@@ -196,6 +196,11 @@ void generate_id()
   SERVER_ID.insert(0, result);
 }
 
+std::string get_id()
+{
+  return SERVER_ID;
+}
+
 int main (void)
 {
   //changePorts();
