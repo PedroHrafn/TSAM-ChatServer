@@ -67,12 +67,12 @@ int send_message(int filedes, std::string message)
   return (send(filedes, message.c_str(), sizeof(message.c_str()), 0));
 }
 
-int read_from_client (int filedes)
+int read_from_client (int userSock)
 {
   char buffer[MAXMSG] = {};
   int nbytes;
 
-  nbytes = read (filedes, buffer, MAXMSG);
+  nbytes = read (userSock, buffer, MAXMSG);
   if (nbytes < 0)
     {
       /* Read error. */
@@ -86,8 +86,26 @@ int read_from_client (int filedes)
     {
       /* Data read. */
       fprintf (stderr, "Server: got message: %s\n", buffer);
-      //std::string msg = "kalli\n";
-      //send_message(filedes, msg);
+
+      char *saveptr1;
+      char *header = strtok_r(buffer, " ", &saveptr1);
+
+      if(header == "CONNECT")
+      {
+        std::string s = std::to_string(userSock);
+        logged_users.insert( std::pair<std::string,int>(s, userSock));
+      }/*
+      else if(header == "MSG")
+      {
+        for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+        {
+          send_message(it->second , "test");
+        }
+         
+      }*/
+
+        send_message(userSock , buffer);
+      
       return 0;
     }
 }
@@ -232,7 +250,6 @@ int main (void)
                       ntohs (clientname.sin_port));
             FD_SET (newSock, &active_fd_set);
             // TODO: insert to logged_users
-            //logged_users.insert( std::pair<std::string,int>(USERNAME, newSock?));
           }
           if(knock != correct_knocks.end())
             correct_knocks.erase(knock);
