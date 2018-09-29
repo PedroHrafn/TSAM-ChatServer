@@ -125,6 +125,14 @@ int read_from_client (int userSock)
       }
       else if(command == "LEAVE")
       {
+        for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+          {
+            if(it->second == userSock)
+            {
+              logged_users.erase(it);
+              return -1;
+            }
+          }
         return -1;
       }
       else if(command == "CONNECT")
