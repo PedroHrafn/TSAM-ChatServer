@@ -64,16 +64,8 @@ int make_socket (uint16_t port)
 
 int send_message(int userSock, std::string message)
 {
-  fprintf(stderr, "size: %d\n", (message.size()));
+  message += "\n";
   return (send(userSock, message.c_str(), message.size(), 0));
-}
-
-void who(int userSock)
-{
-  for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
-  {
-    send_message(userSock, it->first);
-  }
 }
 
 int read_from_client (int userSock)
@@ -98,34 +90,40 @@ int read_from_client (int userSock)
       //std::string msg = "kalli\n";
       //send_message(filedes, msg);
       std::string s = buffer;
+      s.erase(s.size() - 1);
       size_t splitter = s.find(' ');
-      if(splitter == std::string::npos || splitter == s.size() - 2)
-      {
-        std::cout << "TYPE COMMAND, SPACE, SOMETHING" << std::endl;
-        return 0;
-      }
       std::string command = s.substr(0, splitter);
-      std::string message = s.substr(splitter + 1);
-      message = message.substr(0, message.size() - 1);
 
-      if(command == "CONNECT")
+      if(splitter == std::string::npos || splitter == s.size() - 1)
+      {
+        //std::cout << "TYPE COMMAND, SPACE, SOMETHING" << std::endl;
+        //return 0;
+      }
+      std::string message = s.substr(splitter + 1);
+
+      if(command == "WHO")
+      {
+        send_message(userSock, "\nUsers logged in the chatroom:");
+        for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
+          send_message(userSock, it->first);
+      }
+      else if(command == "CONNECT")
       {
         std::string username = message.substr(0, splitter);
         auto checkUsername = logged_users.find(username);
         if(checkUsername == logged_users.end())
         {
-          for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+          for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
           {
             if(it->second == userSock)
             {
               fprintf(stderr, "You are already connected\n");
-              send_message(userSock, "You are already connected");
+              send_message(userSock, "You are already connected as: " + it->first);
               return 0;
             }
           }
           logged_users.insert(std::pair<std::string,int>(username,userSock));
-          std::string mesgg = "Joined server successfully";
-          send_message(userSock, mesgg);
+          send_message(userSock, "Joined server successfully");
           fprintf(stderr, "success\n");
           
         }
@@ -136,6 +134,33 @@ int read_from_client (int userSock)
           send_message(userSock, msgg);
         }
       }
+      else
+      {
+        for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+          {
+            std::string username;
+            if(it->second == userSock)
+            {
+              username = it->first;
+              if(command == "MSG_ALL")
+              {
+              for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+                {
+                  if(it->second != userSock)
+                  {
+                    message = username + ": " + message;
+                    send_message(it->second, message);
+                  }
+                }
+              }
+              return 0;
+            }
+          }
+          send_message(userSock, "You must connect first");
+        
+        
+      }
+      
       return 0;
     }
 }
