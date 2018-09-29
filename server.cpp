@@ -111,6 +111,10 @@ int read_from_client (int userSock)
         for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
           send_message(userSock, it->first);
       }
+      else if(command == "LEAVE")
+      {
+        return -1;
+      }
       else if(command == "CONNECT")
       {
         std::string username = message.substr(0, splitter);
