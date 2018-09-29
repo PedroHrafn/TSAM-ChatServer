@@ -64,7 +64,8 @@ int make_socket (uint16_t port)
 
 int send_message(int userSock, std::string message)
 {
-  return (send(userSock, message.c_str(), sizeof(message.c_str()), 0));
+  fprintf(stderr, "size: %d\n", (message.size()));
+  return (send(userSock, message.c_str(), message.size(), 0));
 }
 
 int read_from_client (int userSock)
@@ -106,13 +107,15 @@ int read_from_client (int userSock)
         if(checkUsername == logged_users.end())
         {
           logged_users.insert(std::pair<std::string,int>(username,userSock));
-          send_message(userSock, "Joined server successfully");
+          std::string mesgg = "Joined server successfully";
+          send_message(userSock, mesgg);
           fprintf(stderr, "success\n");
         }
         else 
         {
+          std::string msgg = "Username taken";
           fprintf(stderr, "Username taken\n");
-          send_message(userSock, "Username taken");
+          send_message(userSock, msgg);
         }
       }
       return 0;
