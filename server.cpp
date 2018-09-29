@@ -68,6 +68,14 @@ int send_message(int userSock, std::string message)
   return (send(userSock, message.c_str(), message.size(), 0));
 }
 
+void who(int userSock)
+{
+  for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+  {
+    send_message(userSock, it->first);
+  }
+}
+
 int read_from_client (int userSock)
 {
   char buffer[MAXMSG] = {};
