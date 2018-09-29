@@ -11,6 +11,8 @@
 #include <string.h>
 #include <iostream>
 #include <map>
+#include <sstream>
+#include <ctime>
 
 #define PORT    5555
 #define MAXMSG  512
@@ -20,6 +22,8 @@ int rightInARow;
 int FIRSTKNOCK = 5553;
 int SECONDKNOCK = 5554;
 int LASTPORT = 5555;
+
+std::string SERVER_ID = "Group 18";
 
 /*  This will probably not be used
 struct chat_user
@@ -165,6 +169,32 @@ void changePorts()
   LASTPORT = 5558;
 }
 
+void generate_id()
+{
+  std::time_t time = std::time(nullptr); 
+  std::stringstream ss;
+  ss << time;
+  std::string time_stamp = ss.str().append(" ");
+  SERVER_ID.insert(0, time_stamp);
+
+  std::string command("fortune -s");
+
+  std::array<char, 256> buffer;
+  std::string result;
+
+  FILE* pipe = popen(command.c_str(), "r");
+ 
+
+  while (fgets(buffer.data(), 256, pipe) != NULL) {
+    result += buffer.data();
+  }
+
+  pclose(pipe);
+
+  
+
+  SERVER_ID.insert(0, result);
+}
 
 int main (void)
 {
@@ -174,6 +204,11 @@ int main (void)
   int i;
   struct sockaddr_in clientname;
   size_t size;
+
+
+  
+  generate_id();
+  std::cout <<SERVER_ID << std::endl;
 
   /* Create the socket and set it up to accept connections. */
   firstKnockSock = make_socket (FIRSTKNOCK);
