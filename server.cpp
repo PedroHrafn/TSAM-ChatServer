@@ -67,12 +67,12 @@ int send_message(int filedes, std::string message)
   return (send(filedes, message.c_str(), sizeof(message.c_str()), 0));
 }
 
-int read_from_client (int filedes)
+int read_from_client (int userSock)
 {
   char buffer[MAXMSG] = {};
   int nbytes;
 
-  nbytes = read (filedes, buffer, MAXMSG);
+  nbytes = read (userSock, buffer, MAXMSG);
   if (nbytes < 0)
     {
       /* Read error. */

@@ -74,11 +74,12 @@ int main(int argc, char *argv[])
     {
         error("ERROR connecting");
     }
+    printf("Welcome to the chat server");
         
     // Read and write to socket
     while(true)
     {
-        printf("Please enter the message: ");
+        
         bzero(buffer,256);
         fgets(buffer,255,stdin);
         n = write(sockfd3,buffer,strlen(buffer));
@@ -87,13 +88,15 @@ int main(int argc, char *argv[])
         {
             error("ERROR writing to socket");
         }
+
         bzero(buffer,256);
         n = read(sockfd3,buffer,255);
         if (n < 0) 
             error("ERROR reading from socket");
         printf("%s\n",buffer);
+    
     }
     
-    
+    close(sockfd3);
     return 0;
 }
