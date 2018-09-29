@@ -72,6 +72,18 @@ int send_message(int userSock, std::string message)
   return (send(userSock, message.c_str(), message.size(), 0));
 }
 
+std::string get_user_by_fd(int userSock)
+{
+  for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+  {
+    if(it->second != userSock)
+    {
+      return it->first;
+    }
+  }
+  return "";
+}
+
 int read_from_client (int userSock)
 {
   char buffer[MAXMSG] = {};
@@ -152,7 +164,7 @@ int read_from_client (int userSock)
               username = it->first;
               if(command == "MSG_ALL")
               {
-              for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+                for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
                 {
                   if(it->second != userSock)
                   {
@@ -161,9 +173,16 @@ int read_from_client (int userSock)
                   }
                 }
               }
-              else
+              else if(command == "MSG")
               {
-                send_message(userSock, "Invalid command");
+                int splitter = message.find(' ');
+                std::string reciever = message.substr(0, splitter);
+                std::string message_to_rec = message.substr(splitter + 1);
+                auto recSock = logged_users.find(reciever);
+                if(recSock != logged_users.end())
+                  send_message(recSock->second, message_to_rec);
+                else
+                  send_message(userSock, "User with name '" + reciever + "' not found");
               }
               return 0;
             }
