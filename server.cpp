@@ -106,10 +106,20 @@ int read_from_client (int userSock)
         auto checkUsername = logged_users.find(username);
         if(checkUsername == logged_users.end())
         {
+          for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+          {
+            if(it->second == userSock)
+            {
+              fprintf(stderr, "You are already connected\n");
+              send_message(userSock, "You are already connected");
+              return 0;
+            }
+          }
           logged_users.insert(std::pair<std::string,int>(username,userSock));
           std::string mesgg = "Joined server successfully";
           send_message(userSock, mesgg);
           fprintf(stderr, "success\n");
+          
         }
         else 
         {
