@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
 
-    serv_addr.sin_family = AF_INET; // This is always set to AF_INET
+    serv_addr.sin_family = AF_INET;
 
     // Host address is stored in network byte order
     bcopy((char *)server->h_addr, 
@@ -107,7 +107,8 @@ int main(int argc, char *argv[])
     {
         error("ERROR connecting");
     }
-    printf("Welcome to the chat server");
+    printf("Welcome to the chat server\n");
+    printf("Use command CONNECT 'username' To join the chat\n");
         
     // Read and write to socket
     std::thread read (readFromServer);
