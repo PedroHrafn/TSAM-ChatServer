@@ -62,9 +62,9 @@ int make_socket (uint16_t port)
   return sock;
 }
 
-int send_message(int filedes, std::string message)
+int send_message(int userSock, std::string message)
 {
-  return (send(filedes, message.c_str(), sizeof(message.c_str()), 0));
+  return (send(userSock, message.c_str(), sizeof(message.c_str()), 0));
 }
 
 int read_from_client (int userSock)
@@ -98,6 +98,23 @@ int read_from_client (int userSock)
       std::string command = s.substr(0, splitter);
       std::string message = s.substr(splitter + 1);
       message = message.substr(0, message.size() - 1);
+
+      if(command == "CONNECT")
+      {
+        std::string username = message.substr(0, splitter);
+        auto checkUsername = logged_users.find(username);
+        if(checkUsername == logged_users.end())
+        {
+          logged_users.insert(std::pair<std::string,int>(username,userSock));
+          send_message(userSock, "Joined server successfully");
+          fprintf(stderr, "success\n");
+        }
+        else 
+        {
+          fprintf(stderr, "Username taken\n");
+          send_message(userSock, "Username taken");
+        }
+      }
       return 0;
     }
 }
