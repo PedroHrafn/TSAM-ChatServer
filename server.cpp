@@ -96,7 +96,7 @@ int read_from_client (int userSock)
       size_t splitter = s.find(' ');
       if(splitter == std::string::npos || splitter == s.size() - 2)
       {
-        std::cout << "TYPE COMMAND, SPACE, SOMETHING" << std::endl;
+        send_message(userSock, "TYPE COMMAND, SPACE, SOMETHING");
         return 0;
       }
       std::string command = s.substr(0, splitter);
@@ -150,12 +150,14 @@ int read_from_client (int userSock)
                   }
                 }
               }
+              else
+              {
+                send_message(userSock, "Invalid command");
+              }
               return 0;
             }
           }
-          send_message(userSock, "You must connect first");
-        
-        
+          send_message(userSock, "You must connect first to use commands");
       }
       
       return 0;
@@ -182,17 +184,13 @@ void generate_id()
   std::array<char, 256> buffer;
   std::string result;
 
-  FILE* pipe = popen(command.c_str(), "r");
- 
+  FILE* pipe = popen(command.c_str(), "r"); 
 
   while (fgets(buffer.data(), 256, pipe) != NULL) {
     result += buffer.data();
   }
 
   pclose(pipe);
-
-  
-
   SERVER_ID.insert(0, result);
 }
 
