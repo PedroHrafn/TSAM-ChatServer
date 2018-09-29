@@ -64,7 +64,6 @@ int make_socket (uint16_t port)
 
 int send_message(int userSock, std::string message)
 {
-  fprintf(stderr, "size: %d\n", (message.size()));
   return (send(userSock, message.c_str(), message.size(), 0));
 }
 
@@ -128,6 +127,33 @@ int read_from_client (int userSock)
           send_message(userSock, msgg);
         }
       }
+      else
+      {
+        for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+          {
+            std::string username;
+            if(it->second == userSock)
+            {
+              username = it->first;
+              if(command == "MSG_ALL")
+              {
+              for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+                {
+                  if(it->second != userSock)
+                  {
+                    message = username + ": " + message;
+                    send_message(it->second, message);
+                  }
+                }
+              }
+              return 0;
+            }
+          }
+          send_message(userSock, "You must connect first");
+        
+        
+      }
+      
       return 0;
     }
 }
