@@ -109,17 +109,10 @@ void changePorts()
   LASTPORT = 5558;
 }
 
-int knocksOfIP(char* IP)
-{
-  return rightInARow;
-}
-
-
 
 int main (void)
 {
   //changePorts();
-  rightInARow = 0;
   int sock, firstKnockSock, secondKnockSock;
   fd_set active_fd_set, read_fd_set;
   int i;
