@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <thread> 
+#include <iostream>
 
 int sockfd1, sockfd2, sockfd3, n;
 
@@ -43,7 +44,14 @@ void WriteToServer()
         if (n < 0) 
         {
             error("ERROR writing to socket");
-        }
+        }  
+        std::string command = buffer;
+        command.erase(command.size()-1);
+        if(command == "LEAVE")
+        {
+            close(sockfd3);
+            exit(0);
+        }  
     }
 }
 
