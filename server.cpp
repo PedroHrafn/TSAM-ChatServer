@@ -25,16 +25,6 @@ int LASTPORT = 5555;
 
 std::string SERVER_ID = " ";
 
-/*  This will probably not be used
-struct chat_user
-{
-  std::string IP;
-  std::string name;
-  int socket;
-};
-std::vector<chat_user> chat_users; */
-
-
 // A map of username and it's corresponding FD
 std::map<std::string, int> logged_users;
 // A map of an IP address and it's corresponding correct knocks in a row
@@ -74,7 +64,7 @@ int send_message(int userSock, std::string message)
 
 std::string get_user_by_fd(int userSock)
 {
-  for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
+  for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
   {
     if(it->second == userSock)
     {
@@ -135,107 +125,82 @@ int read_from_client (int userSock)
   {
     /* Data read. */
     fprintf (stderr, "Server: got message: %s\n", buffer);
-    //std::string msg = "kalli\n";
-    //send_message(filedes, msg);
-    std::string s = buffer;
-    s.erase(s.size() - 1);
-    size_t splitter = s.find(' ');
-    std::string command = s.substr(0, splitter);
+    std::string read_string = buffer;
+    read_string.erase(read_string.size() - 1);
+    size_t splitter = read_string.find(' ');
+    std::string command = read_string.substr(0, splitter);
+    std::string message = read_string.substr(splitter + 1);
+    std::string client_name = get_user_by_fd(userSock);
 
-    if(splitter == std::string::npos || splitter == s.size() - 1)
+    // Check if client is connected, else he has to connect for further use.
+    if(client_name == "")
     {
-      //send_message(userSock, "TYPE COMMAND, SPACE, SOMETHING");
-      //return 0;
+      if(command != "CONNECT")
+        send_message(userSock, "Please log in by typing: CONNECT <name>");
+      else if(message != "" || message != "ALL")
+      {
+        std::string username = message;
+        auto checkUsername = logged_users.find(username);
+        if(checkUsername == logged_users.end())
+        {
+          logged_users.insert(std::pair<std::string,int>(username,userSock));
+          send_message(userSock, "Joined server successfully");
+        }
+        else 
+        {
+          send_message(userSock, "Username taken");
+        }
+      }
+      return 0;
     }
-    std::string message = s.substr(splitter + 1);
-    if (command == "ID")
+    else if (command == "CONNECT")
+      send_message(userSock, "You are already connected as: " + client_name);
+    else if (command == "ID")
     {
       std::string print_id = get_id();
-      std::cout << print_id << std::endl;
+      send_message(userSock, print_id);
     }
-    if (command == "CHANGE_ID")
+    else if (command == "CHANGE_ID")
     {
       generate_id();
       SERVER_ID = get_id();
     }
-    if(command == "WHO")
+    else if(command == "WHO")
     {
       send_message(userSock, "\nUsers logged in the chatroom:");
       for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
         send_message(userSock, it->first);
     }
-    else if(command == "CONNECT")
+    else if(command == "MSG")
     {
-      std::string username = message.substr(0, splitter);
-      auto checkUsername = logged_users.find(username);
-      if(checkUsername == logged_users.end())
+      int splitter = message.find(' ');
+      std::string reciever = message.substr(0, splitter);
+      std::string message_to_rec = message.substr(splitter + 1);
+      if(reciever == "ALL")
       {
-        std::string current_user = get_user_by_fd(userSock);
-        if(current_user != "")
+        for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
         {
-          send_message(userSock, "You are already connected as: " + current_user);
-          return 0;
-        }
-    
-        logged_users.insert(std::pair<std::string,int>(username,userSock));
-        send_message(userSock, "Joined server successfully");
-        fprintf(stderr, "success\n");
-        
-      }
-      else 
-      {
-        std::string msgg = "Username taken";
-        fprintf(stderr, "Username taken\n");
-        send_message(userSock, msgg);
-      }
-    }
-    else
-    {
-      if(command == "MSG")
-      {
-        int splitter = message.find(' ');
-        std::string reciever = message.substr(0, splitter);
-        std::string message_to_rec = message.substr(splitter + 1);
-        std::string username = get_user_by_fd(userSock);
-        if(reciever == "ALL")
-        {
-          for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
+          if(it->second != userSock)
           {
-            if(it->second != userSock)
-            {
-              send_message(it->second, username + " TO ALL: " +message_to_rec);
-            }
+            send_message(it->second, client_name + " TO ALL: " +message_to_rec);
           }
-          return 0;
         }
-        auto recSock = logged_users.find(reciever);
-        if(recSock != logged_users.end())
-          send_message(recSock->second, get_user_by_fd(userSock) + ": " +  message_to_rec);
-        else
-          send_message(userSock, "User with name '" + reciever + "' not found");
+        return 0;
       }
-      return 0;
-      
-      send_message(userSock, "You must connect first to use commands");
+      auto recSock = logged_users.find(reciever);
+      if(recSock != logged_users.end())
+        send_message(recSock->second, 
+                    get_user_by_fd(userSock) + " whispered: " +  message_to_rec);
+      else
+        send_message(userSock, "User with name '" + reciever + "' not found");
     }
-    
     return 0;
   }
 }
 
-void changePorts()
-{
-  FIRSTKNOCK = 5556;
-  SECONDKNOCK = 5557;
-  LASTPORT = 5558;
-}
-
-
-
 int main (void)
 {
-  //changePorts();
-  int sock, firstKnockSock, secondKnockSock;
+  int firstKnockSock, secondKnockSock, thirdKnockSock;
   fd_set active_fd_set, read_fd_set;
   int i;
   struct sockaddr_in clientname;
@@ -247,9 +212,11 @@ int main (void)
   /* Create the socket and set it up to accept connections. */
   firstKnockSock = make_socket (FIRSTKNOCK);
   secondKnockSock = make_socket (SECONDKNOCK);
-  sock = make_socket (LASTPORT);
+  thirdKnockSock = make_socket (LASTPORT);
 
-  if (listen (sock, 1) < 0 || listen (secondKnockSock, 1) < 0 || listen (firstKnockSock, 1) < 0)
+  if (listen (thirdKnockSock, 1) < 0 
+      || listen (secondKnockSock, 1) < 0 
+      || listen (firstKnockSock, 1) < 0)
   {
     perror ("listen");
     exit (EXIT_FAILURE);
@@ -258,7 +225,7 @@ int main (void)
   /* Initialize the set of active sockets. */
   FD_ZERO (&active_fd_set);
   FD_SET (firstKnockSock, &active_fd_set);
-  FD_SET (sock, &active_fd_set);
+  FD_SET (thirdKnockSock, &active_fd_set);
   FD_SET (secondKnockSock, &active_fd_set);
 
   while (1)
@@ -275,8 +242,14 @@ int main (void)
     for (i = 0; i < FD_SETSIZE; ++i)
       if (FD_ISSET (i, &read_fd_set))
       {
-        /* Checked what socket has input pending */
-        if (i == firstKnockSock || i == secondKnockSock || i == sock)
+        /* Handle port knocking */
+        /* For the port knocking we store every IP in a map that has done a correct 
+         * sequence of port knocking on the server, with an integer of right knocks
+         * in a row as soon as an incorrect port is knocked, the IP in the map is 
+         * erased, or reinitialized when knocked on the port that is first in the 
+         * sequence.
+         */
+        if (i == firstKnockSock || i == secondKnockSock || i == thirdKnockSock)
         {
           int newSock;
           size = sizeof (clientname);
@@ -305,13 +278,10 @@ int main (void)
               close(newSock);
             else
             {
-              /* Knocking succeeded and FD is set for the new socket */
+              /* Knocking succeeded and FD is set for the new user */
               FD_SET (newSock, &active_fd_set);
-              // TODO: insert to logged_users
-              //logged_users.insert( std::pair<std::string,int>(USERNAME, newSock?));
-            }
-            if(knock != correct_knocks.end())
               correct_knocks.erase(knock);
+            }
           }
         }
         
@@ -320,7 +290,7 @@ int main (void)
           /* Data arriving on an already-connected socket. */
           if (read_from_client (i) < 0)
           {
-            // TODO: delete user from logged_users
+            logged_users.erase( get_user_by_fd(i) );
             close (i);
             FD_CLR (i, &active_fd_set);
           }
