@@ -9,7 +9,12 @@
 #include <thread> 
 #include <iostream>
 
-int sockfd1, sockfd2, sockfd3, n;
+#define FIRSTKNOCK    5553
+#define SECONDKNOCK   5554
+#define LASTPORT      5555
+#define MAXMSG        512
+
+int SOCKFD1, SOCKFD2, SOCKFD3;
 
 char buffer[256];
 
@@ -21,10 +26,11 @@ void error(const char *msg)
 
 void readFromServer()
 {
+    int n;
     while(true)
     {
         bzero(buffer,256);
-        n = read(sockfd3,buffer,255);
+        n = read(SOCKFD3,buffer,255);
         if (n < 0) 
         {
             error("ERROR reading from socket");
@@ -35,11 +41,12 @@ void readFromServer()
 
 void WriteToServer()
 {
+    int n;
     while(true)
     {
         bzero(buffer,256);
         fgets(buffer,255,stdin);
-        n = write(sockfd3,buffer,strlen(buffer));
+        n = write(SOCKFD3,buffer,strlen(buffer));
 
         if (n < 0) 
         {
@@ -49,7 +56,7 @@ void WriteToServer()
         command.erase(command.size()-1);
         if(command == "LEAVE")
         {
-            close(sockfd3);
+            close(SOCKFD3);
             exit(0);
         }  
     }
@@ -57,24 +64,19 @@ void WriteToServer()
 
 int main(int argc, char *argv[])
 {
-    int port1, port2, port3;
     struct sockaddr_in serv_addr;           // Socket address structure
     struct hostent *server;
     
-    if (argc < 3) {
-       fprintf(stderr,"usage %s hostname port\n", argv[0]);
+    if (argc != 2) {
+       fprintf(stderr,"usage: %s hostname\n", argv[0]);
        exit(0);
     }
 
-    port1 = atoi(argv[2]);     // Read Port No from command line
-    port2 = atoi(argv[3]); 
-    port3 = atoi(argv[4]); 
+    SOCKFD1 = socket(AF_INET, SOCK_STREAM, 0); // Open Socket
+    SOCKFD2 = socket(AF_INET, SOCK_STREAM, 0); // Open Socket
+    SOCKFD3 = socket(AF_INET, SOCK_STREAM, 0); // Open Socket
 
-    sockfd1 = socket(AF_INET, SOCK_STREAM, 0); // Open Socket
-    sockfd2 = socket(AF_INET, SOCK_STREAM, 0); // Open Socket
-    sockfd3 = socket(AF_INET, SOCK_STREAM, 0); // Open Socket
-
-    if (sockfd1 < 0 || sockfd2 < 0 || sockfd3 < 0) 
+    if (SOCKFD1 < 0 || SOCKFD2 < 0 || SOCKFD3 < 0) 
         error("ERROR opening socket");
 
     server = gethostbyname(argv[1]);        // Get host from IP
@@ -93,25 +95,25 @@ int main(int argc, char *argv[])
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
 
-    serv_addr.sin_port = htons(port1);
+    serv_addr.sin_port = htons(FIRSTKNOCK);
 
-    if (connect(sockfd1,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+    if (connect(SOCKFD1,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
     { 
         error("ERROR connecting");
     }
 
-    close(sockfd1);
-    serv_addr.sin_port = htons(port2);
+    close(SOCKFD1);
+    serv_addr.sin_port = htons(SECONDKNOCK);
 
-    if (connect(sockfd2,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+    if (connect(SOCKFD2,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
     {
         error("ERROR connecting");
     }
     
-    close(sockfd2);
-    serv_addr.sin_port = htons(port3);
+    close(SOCKFD2);
+    serv_addr.sin_port = htons(LASTPORT);
 
-    if (connect(sockfd3,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+    if (connect(SOCKFD3,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
     {
         error("ERROR connecting");
     }
@@ -123,6 +125,6 @@ int main(int argc, char *argv[])
     read.join();
     write.join();
     
-    close(sockfd3);
+    close(SOCKFD3);
     return 0;
 }

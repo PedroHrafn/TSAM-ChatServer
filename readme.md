@@ -4,8 +4,8 @@ The server and client were compiled on ubuntu16
 
 - To compile the server use 'g++ server.cpp -o server' and then ./server to run.
 - To compile the server use 'g++ client.cpp -o client -pthread' and then ./client to run.
-- The client needs 4 arguments to run it, the first being the host and next three the ports to knock in the correct order, e.g. './client localhost 5003 5004 5005'
-- The ports that have to be knocked are hardcoded in the server.cpp as 5003, 5004 and 5005 in respectively.
+- The client takes the server's address as an argument, to run it locally type: './client 192.0.0.1'
+- The ports that have to be knocked are hardcoded in the server.cpp and client.cpp as 5003, 5004 and 5005 in respectively.
 
 
 Commands for the client:
