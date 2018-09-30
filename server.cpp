@@ -23,7 +23,7 @@ int FIRSTKNOCK = 5553;
 int SECONDKNOCK = 5554;
 int LASTPORT = 5555;
 
-std::string SERVER_ID = "Group 18";
+std::string SERVER_ID = " ";
 
 /*  This will probably not be used
 struct chat_user
@@ -84,6 +84,38 @@ std::string get_user_by_fd(int userSock)
   return "";
 }
 
+//returns the server id
+std::string get_id()
+{
+  return SERVER_ID;
+}
+//generates a new server id
+void generate_id()
+{
+  SERVER_ID = "Group 18";
+  std::time_t time = std::time(nullptr);
+  std::stringstream ss;
+  ss << time;
+  std::string time_stamp = ss.str().append(" ");
+  SERVER_ID.insert(0, time_stamp);
+
+  std::string command("fortune -s");
+
+  std::array<char, 256> buffer;
+  std::string result;
+
+  FILE *pipe = popen(command.c_str(), "r");
+
+  while (fgets(buffer.data(), 256, pipe) != NULL)
+  {
+    result += buffer.data();
+  }
+
+  pclose(pipe);
+  // correctly formats the id string
+  SERVER_ID.insert(0, result);
+}
+
 int read_from_client (int userSock)
 {
   char buffer[MAXMSG] = {};
@@ -116,7 +148,16 @@ int read_from_client (int userSock)
       //return 0;
     }
     std::string message = s.substr(splitter + 1);
-
+    if (command == "ID")
+    {
+      std::string print_id = get_id();
+      std::cout << print_id << std::endl;
+    }
+    if (command == "CHANGE_ID")
+    {
+      generate_id();
+      SERVER_ID = get_id();
+    }
     if(command == "WHO")
     {
       send_message(userSock, "\nUsers logged in the chatroom:");
@@ -189,33 +230,7 @@ void changePorts()
   LASTPORT = 5558;
 }
 
-void generate_id()
-{
-  std::time_t time = std::time(nullptr); 
-  std::stringstream ss;
-  ss << time;
-  std::string time_stamp = ss.str().append(" ");
-  SERVER_ID.insert(0, time_stamp);
 
-  std::string command("fortune -s");
-
-  std::array<char, 256> buffer;
-  std::string result;
-
-  FILE* pipe = popen(command.c_str(), "r"); 
-
-  while (fgets(buffer.data(), 256, pipe) != NULL) {
-    result += buffer.data();
-  }
-
-  pclose(pipe);
-  SERVER_ID.insert(0, result);
-}
-
-std::string get_id()
-{
-  return SERVER_ID;
-}
 
 int main (void)
 {
@@ -225,11 +240,9 @@ int main (void)
   int i;
   struct sockaddr_in clientname;
   size_t size;
-
-
   
+  //initializes the server id
   generate_id();
-  std::cout <<SERVER_ID << std::endl;
 
   /* Create the socket and set it up to accept connections. */
   firstKnockSock = make_socket (FIRSTKNOCK);
