@@ -100,85 +100,86 @@ int read_from_client (int userSock)
     /* End-of-file. */
     return -1;
   else
+  {
+    /* Data read. */
+    fprintf (stderr, "Server: got message: %s\n", buffer);
+    //std::string msg = "kalli\n";
+    //send_message(filedes, msg);
+    std::string s = buffer;
+    s.erase(s.size() - 1);
+    size_t splitter = s.find(' ');
+    std::string command = s.substr(0, splitter);
+
+    if(splitter == std::string::npos || splitter == s.size() - 1)
     {
-      /* Data read. */
-      fprintf (stderr, "Server: got message: %s\n", buffer);
-      //std::string msg = "kalli\n";
-      //send_message(filedes, msg);
-      std::string s = buffer;
-      s.erase(s.size() - 1);
-      size_t splitter = s.find(' ');
-      std::string command = s.substr(0, splitter);
-
-      if(splitter == std::string::npos || splitter == s.size() - 1)
-      {
-        //send_message(userSock, "TYPE COMMAND, SPACE, SOMETHING");
-        //return 0;
-      }
-      std::string message = s.substr(splitter + 1);
-
-      if(command == "WHO")
-      {
-        send_message(userSock, "\nUsers logged in the chatroom:");
-        for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
-          send_message(userSock, it->first);
-      }
-      else if(command == "CONNECT")
-      {
-        std::string username = message.substr(0, splitter);
-        auto checkUsername = logged_users.find(username);
-        if(checkUsername == logged_users.end())
-        {
-          std::string current_user = get_user_by_fd(userSock);
-          if(current_user != "")
-          {
-            send_message(userSock, "You are already connected as: " + current_user);
-            return 0;
-          }
-      
-          logged_users.insert(std::pair<std::string,int>(username,userSock));
-          send_message(userSock, "Joined server successfully");
-          fprintf(stderr, "success\n");
-          
-        }
-        else 
-        {
-          std::string msgg = "Username taken";
-          fprintf(stderr, "Username taken\n");
-          send_message(userSock, msgg);
-        }
-      }
-      else
-      {
-        if(command == "MSG")
-        {
-          int splitter = message.find(' ');
-          std::string reciever = message.substr(0, splitter);
-          std::string message_to_rec = message.substr(splitter + 1);
-          if(reciever == "ALL")
-          {
-            for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
-            {
-              if(it->second != userSock)
-              {
-                send_message(it->second, username + " TO ALL: " +message_to_rec);
-              }
-            }
-            return 0;
-          }
-          auto recSock = logged_users.find(reciever);
-          if(recSock != logged_users.end())
-            send_message(recSock->second, get_user_by_fd(userSock) + ": " +  message_to_rec);
-          else
-            send_message(userSock, "User with name '" + reciever + "' not found");
-        }
-        return 0;
-        
-        send_message(userSock, "You must connect first to use commands");
-      }
-      
-      return 0;
+      //send_message(userSock, "TYPE COMMAND, SPACE, SOMETHING");
+      //return 0;
     }
+    std::string message = s.substr(splitter + 1);
+
+    if(command == "WHO")
+    {
+      send_message(userSock, "\nUsers logged in the chatroom:");
+      for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
+        send_message(userSock, it->first);
+    }
+    else if(command == "CONNECT")
+    {
+      std::string username = message.substr(0, splitter);
+      auto checkUsername = logged_users.find(username);
+      if(checkUsername == logged_users.end())
+      {
+        std::string current_user = get_user_by_fd(userSock);
+        if(current_user != "")
+        {
+          send_message(userSock, "You are already connected as: " + current_user);
+          return 0;
+        }
+    
+        logged_users.insert(std::pair<std::string,int>(username,userSock));
+        send_message(userSock, "Joined server successfully");
+        fprintf(stderr, "success\n");
+        
+      }
+      else 
+      {
+        std::string msgg = "Username taken";
+        fprintf(stderr, "Username taken\n");
+        send_message(userSock, msgg);
+      }
+    }
+    else
+    {
+      if(command == "MSG")
+      {
+        int splitter = message.find(' ');
+        std::string reciever = message.substr(0, splitter);
+        std::string message_to_rec = message.substr(splitter + 1);
+        std::string username = get_user_by_fd(userSock);
+        if(reciever == "ALL")
+        {
+          for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
+          {
+            if(it->second != userSock)
+            {
+              send_message(it->second, username + " TO ALL: " +message_to_rec);
+            }
+          }
+          return 0;
+        }
+        auto recSock = logged_users.find(reciever);
+        if(recSock != logged_users.end())
+          send_message(recSock->second, get_user_by_fd(userSock) + ": " +  message_to_rec);
+        else
+          send_message(userSock, "User with name '" + reciever + "' not found");
+      }
+      return 0;
+      
+      send_message(userSock, "You must connect first to use commands");
+    }
+    
+    return 0;
+  }
 }
 
 void changePorts()
