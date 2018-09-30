@@ -14,17 +14,13 @@
 #include <sstream>
 #include <ctime>
 
-#define PORT    5555
-#define MAXMSG  512
+#define FIRSTKNOCK    5553
+#define SECONDKNOCK   5554
+#define LASTPORT      5555
+#define MAXMSG        512
 
-int rightInARow;
-
-int FIRSTKNOCK = 5553;
-int SECONDKNOCK = 5554;
-int LASTPORT = 5555;
-
-std::string SERVER_ID = " ";
-
+// The ID of the Server
+std::string SERVER_ID = "";
 // A map of username and it's corresponding FD
 std::map<std::string, int> logged_users;
 // A map of an IP address and it's corresponding correct knocks in a row
@@ -106,6 +102,10 @@ void generate_id()
   SERVER_ID.insert(0, result);
 }
 
+/*
+ * In this function we read the socket message from a client
+ * and handle all possible commands asked from the client.
+ */
 int read_from_client (int userSock)
 {
   char buffer[MAXMSG] = {};
@@ -125,10 +125,17 @@ int read_from_client (int userSock)
   {
     /* Data read. */
     fprintf (stderr, "Server: got message: %s\n", buffer);
+    /*
+     * Message recieved from buffer are handled below.
+     * We erase its \n and split it to command and message
+     * at the index of the first space char.
+     */
     std::string read_string = buffer;
     read_string.erase(read_string.size() - 1);
     size_t splitter = read_string.find(' ');
     std::string command = read_string.substr(0, splitter);
+    // If read_string has no space then message == command.
+    // If read_string ends after first space then message == ""
     std::string message = read_string.substr(splitter + 1);
     std::string client_name = get_user_by_fd(userSock);
 
@@ -137,7 +144,7 @@ int read_from_client (int userSock)
     {
       if(command != "CONNECT")
         send_message(userSock, "Please log in by typing: CONNECT <name>");
-      else if(message != "" || message != "ALL")
+      else if(message != "" && message != "ALL" && message != command)
       {
         std::string username = message;
         auto checkUsername = logged_users.find(username);
@@ -151,13 +158,14 @@ int read_from_client (int userSock)
           send_message(userSock, "Username taken");
         }
       }
-      return 0;
+      else
+        send_message(userSock, "Invalid username");
     }
     else if (command == "CONNECT")
       send_message(userSock, "You are already connected as: " + client_name);
     else if (command == "ID")
       send_message(userSock, get_id());
-    else if (command == "CHANGE_ID")
+    else if (command == "CHANGE" && message == "ID")
     {
       generate_id();
       SERVER_ID = get_id();
@@ -179,18 +187,24 @@ int read_from_client (int userSock)
         {
           if(it->second != userSock)
           {
-            send_message(it->second, client_name + " yelled: " +message_to_rec);
+            send_message(it->second, client_name + " yelled: " + message_to_rec);
           }
         }
+        send_message(userSock, "Message has been sent to everybody");
         return 0;
       }
       auto recSock = logged_users.find(reciever);
       if(recSock != logged_users.end())
+      {
         send_message(recSock->second, 
-                    get_user_by_fd(userSock) + " whispered: " +  message_to_rec);
+                     client_name + " whispered: " +  message_to_rec);
+        send_message(userSock, "To " + reciever + ": " + message_to_rec);
+      }
       else
         send_message(userSock, "User with name '" + reciever + "' not found");
     }
+    else
+      send_message(userSock, "ERROR: Command not found!");
     return 0;
   }
 }
