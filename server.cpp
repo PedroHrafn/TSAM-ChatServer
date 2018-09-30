@@ -156,10 +156,7 @@ int read_from_client (int userSock)
     else if (command == "CONNECT")
       send_message(userSock, "You are already connected as: " + client_name);
     else if (command == "ID")
-    {
-      std::string print_id = get_id();
-      send_message(userSock, print_id);
-    }
+      send_message(userSock, get_id());
     else if (command == "CHANGE_ID")
     {
       generate_id();
