@@ -115,9 +115,6 @@ int main(int argc, char *argv[])
     {
         error("ERROR connecting");
     }
-    printf("Welcome to the chat server\n");
-    printf("Use command CONNECT 'username' To join the chat\n");
-    printf("Use command MSG_ALL 'MESSAGE to send' To send to all users\n");
         
     // Read and write to socket
     std::thread read (readFromServer);

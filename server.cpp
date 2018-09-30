@@ -292,6 +292,7 @@ int main (void)
               /* Knocking succeeded and FD is set for the new user */
               FD_SET (newSock, &active_fd_set);
               correct_knocks.erase(knock);
+              send_message(newSock, "Welcome to the chat server!");
             }
           }
         }
