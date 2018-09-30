@@ -123,18 +123,6 @@ int read_from_client (int userSock)
         for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
           send_message(userSock, it->first);
       }
-      else if(command == "LEAVE")
-      {
-        for (std::map<std::string,int>::iterator it=logged_users.begin(); it!=logged_users.end(); ++it)
-          {
-            if(it->second == userSock)
-            {
-              logged_users.erase(it);
-              return -1;
-            }
-          }
-        return -1;
-      }
       else if(command == "CONNECT")
       {
         std::string username = message.substr(0, splitter);
@@ -162,32 +150,30 @@ int read_from_client (int userSock)
       }
       else
       {
+        if(command == "MSG")
         {
-          std::string username = get_user_by_fd(userSock);
-          if(command == "MSG")
+          int splitter = message.find(' ');
+          std::string reciever = message.substr(0, splitter);
+          std::string message_to_rec = message.substr(splitter + 1);
+          if(reciever == "ALL")
           {
-            int splitter = message.find(' ');
-            std::string reciever = message.substr(0, splitter);
-            std::string message_to_rec = message.substr(splitter + 1);
-            if(reciever == "ALL")
+            for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
             {
-              for (auto it=logged_users.begin(); it!=logged_users.end(); ++it)
+              if(it->second != userSock)
               {
-                if(it->second != userSock)
-                {
-                  send_message(it->second, username + " TO ALL: " +message_to_rec);
-                }
+                send_message(it->second, username + " TO ALL: " +message_to_rec);
               }
-              return 0;
             }
-            auto recSock = logged_users.find(reciever);
-            if(recSock != logged_users.end())
-              send_message(recSock->second, get_user_by_fd(userSock) + ": " +  message_to_rec);
-            else
-              send_message(userSock, "User with name '" + reciever + "' not found");
+            return 0;
           }
-          return 0;
+          auto recSock = logged_users.find(reciever);
+          if(recSock != logged_users.end())
+            send_message(recSock->second, get_user_by_fd(userSock) + ": " +  message_to_rec);
+          else
+            send_message(userSock, "User with name '" + reciever + "' not found");
         }
+        return 0;
+        
         send_message(userSock, "You must connect first to use commands");
       }
       
