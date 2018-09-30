@@ -179,7 +179,7 @@ int read_from_client (int userSock)
         {
           if(it->second != userSock)
           {
-            send_message(it->second, client_name + " TO ALL: " +message_to_rec);
+            send_message(it->second, client_name + " yelled: " +message_to_rec);
           }
         }
         return 0;
